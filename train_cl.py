@@ -2,6 +2,8 @@ import os
 import torch 
 import logging
 import argparse
+import warnings
+
 from torch import nn
 from tqdm import tqdm
 from transformers import (
@@ -12,6 +14,8 @@ from transformers import (
 from utils import *
 from vncorenlp import VnCoreNLP
 from sklearn.model_selection import train_test_split
+
+warnings.filterwarnings('ignore')
 
 class SupervisedContrastiveLoss(nn.Module):
     def __init__(self, temperature=0.1):
@@ -86,23 +90,26 @@ if __name__=="__main__":
     parser.add_argument("--raw_data", default="./data", type=str, help="for loading question")
     parser.add_argument("--legal_data", default="./generated_data", type=str, help="path to legal legal_dict for reference")
     parser.add_argument("--saved_model", default="./saved_model/model4cl-finetune-from-bartphomlm-original", type=str)
+    parser.add_argument("--checkpoints", default="./checkpoints/", type=str)
+    parser.add_argument("--word_segmentator", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str)
     parser.add_argument("--train_ratio", default=0.7, type=float)
     parser.add_argument("--model_name_or_path", default="vinai/bartpho-word", type=str)
     parser.add_argument("--max_seq_len", default=300, type=int)
     parser.add_argument("--learning_rate", default=5e-5, type=float)
     parser.add_argument("--lr_decay", default=False, type=bool)
     parser.add_argument("--batch_size", default=4, type=int)
-    
+    parser.add_argument("--num_epochs", default=5, type=int)
     args = parser.parse_args()
     
     device = get_device()
 
-    legal_data = load_json(os.path.join(args.data, "legal_corpus.json"))
-    train_question_answer = load_json(os.path.join(args.data, "train_question_answer.json"))
+    legal_data = load_json(os.path.join(args.raw_data, "legal_corpus.json"))
+    train_question_answer = load_json(os.path.join(args.raw_data, "train_question_answer.json"))
     legal_dict  = load_json(os.path.join(args.legal_data, "legal_dict.json"))
     
     qa_train, qa_test = train_test_split(train_question_answer["items"], test_size=1-args.train_ratio, random_state=42)
 
+    os.makedirs(args.checkpoints, exist_ok=True)
     print("Saving test set at {}.".format(args.checkpoints))
     save_parameter(qa_test, os.path.join(args.checkpoints, "qa_test.pkl"))
 
@@ -115,7 +122,7 @@ if __name__=="__main__":
     print("Perform word-segmentation.")
     print("Load annotator.")
     annotator = VnCoreNLP(
-        "./VnCoreNLP/VnCoreNLP-1.1.1.jar", 
+        args.word_segmentator, 
         annotators="wseg,pos,ner,parse", 
         max_heap_size="-Xmx2g"
     )
@@ -169,4 +176,3 @@ if __name__=="__main__":
         if args.lr_decay:
             lr_scheduler.step()
     model.save_pretrained(os.path.join(args.saved_model))
-    
