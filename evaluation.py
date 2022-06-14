@@ -5,7 +5,6 @@ warnings.filterwarnings('ignore')
 
 from vncorenlp import VnCoreNLP
 from tqdm import tqdm
-from tqdm.notebook import trange
 from transformers import AutoModelForMaskedLM, AutoTokenizer, AutoModel
 from models.ModelEvaluator import Evaluator
 from models.InformationRetrievalEvaluator import InformationRetrievalEvaluator
@@ -13,7 +12,6 @@ from utils import *
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--raw_data", default="data", type=str, help="path to raw data")
     parser.add_argument("--legal_data", default="generated_data", type=str, help="path to save doc refer.")
     parser.add_argument("--model_name_or_path", default="vinai/bartpho-mlm", type=str, help="path to pretrained model")
     parser.add_argument("--tokenizer_name_or_path", default="vinai/bartpho-mlm", type=str, help="path to pretrained tokenizer")
