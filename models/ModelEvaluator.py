@@ -1,7 +1,7 @@
 import numpy as np
 import torch 
 from torch import nn, Tensor
-from tqdm.notebook import trange
+from tqdm import trange
 from typing import Set, Union, List, Dict, Callable
 
 from transformers import AutoTokenizer, AutoModelForMaskedLM
