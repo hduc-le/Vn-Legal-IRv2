@@ -10,6 +10,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--raw_data", default="./data", type=str, help="for loading question")
     parser.add_argument("--legal_data", default="./generated_data", type=str, help="path to paired data for contrastive learning")
+    parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str)
     parser.add_argument("--train_ratio", default=0.65, type=float)
     args = parser.parse_args()
 
@@ -26,7 +27,7 @@ if __name__=="__main__":
     
     print(">> Load Word-Segmenter...")
     annotator = VnCoreNLP(
-        args.word_segmentator, 
+        args.word_segmenter, 
         annotators="wseg,pos,ner,parse", 
         max_heap_size="-Xmx2g"
     )
