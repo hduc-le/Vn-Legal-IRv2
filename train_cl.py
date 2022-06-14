@@ -46,7 +46,7 @@ def train(model, optimizer, dataloader, epoch):
 
         # compute loss
         if args.pooling_output:
-            sent0_repr, sent1_repr = mean_pooling(model_output0, ft0["attention_mask"]), mean_pooling(model_output1, ft1["attention_mask"])
+            sent0_repr, sent1_repr = mean_pooling(model_output0, attention_mask0), mean_pooling(model_output1, attention_mask1)
         else:
             sent0_repr, sent1_repr = model_output0.last_hidden_state[:,-1,:], model_output1.last_hidden_state[:,-1,:]
         loss = loss_fct(sent0_repr, sent1_repr)
@@ -87,7 +87,7 @@ if __name__=="__main__":
     examples0 = [sent for sent, _ in segmented_pairs]
     examples1 = [sent for _, sent in segmented_pairs]
 
-    print("Download pretrained tokenizer")
+    print(">> Download pretrained tokenizer")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
 
     encodings0 = tokenizer(
@@ -110,7 +110,7 @@ if __name__=="__main__":
                                         batch_size=args.batch_size,
                                         shuffle=True)
 
-    print("Download pretrained model")
+    print(">> Download pretrained model")
     model = AutoModel.from_pretrained(args.model_name_or_path)
     model.to(device)
 
