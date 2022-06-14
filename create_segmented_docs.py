@@ -9,14 +9,14 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--raw_data", default="./data", type=str, help="for loading question")
     parser.add_argument("--legal_data", default="./generated_data", type=str, help="path to doc for reference")
-    parser.add_argument("--word_segmentator", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str, help="path to word segmenter")
+    parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str, help="path to word segmenter")
     args = parser.parse_args()
 
     doc_refers = load_parameter(os.path.join(args.legal_data, "doc_refers_saved.pkl"))
 
     print(">> Load Word-Segmenter...")
     annotator = VnCoreNLP(
-        args.word_segmentator, 
+        args.word_segmenter, 
         annotators="wseg,pos,ner,parse", 
         max_heap_size="-Xmx2g"
     )

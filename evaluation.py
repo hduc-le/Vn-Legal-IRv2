@@ -51,7 +51,7 @@ if __name__=="__main__":
             encoded_type="pooler_output" if args.pooling_output else "last_hidden"
         )
     print(">> Load Queries")
-    qa_test = load_parameter(os.path.join(args.legal_data, "qa_test.pkl"))
+    qa_test = load_parameter(os.path.join(args.legal_data, "test_question_answer.pkl"))
     queries = {}
     relevant_docs = {}
     for item in tqdm(qa_test, desc="Loading"):
@@ -66,7 +66,7 @@ if __name__=="__main__":
                                           relevant_docs=relevant_docs, 
                                           corpus_chunk_size=1000, 
                                           show_progress_bar=True, 
-                                          eval_mode='full_id')
+                                          eval_mode=args.eval_mode)
 
     scores, queries_result_list = evaluator.compute_metrices(model=model, 
                                                             corpus_embeddings=corpus_embeddings)
