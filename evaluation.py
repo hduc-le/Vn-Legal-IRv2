@@ -68,5 +68,5 @@ if __name__=="__main__":
                                           show_progress_bar=True, 
                                           eval_mode=args.eval_mode)
 
-    scores, queries_result_list = evaluator.compute_metrices(model=model, 
+    scores, queries_result_list = ir_evaluator.compute_metrices(model=model, 
                                                             corpus_embeddings=corpus_embeddings)
