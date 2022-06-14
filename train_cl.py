@@ -126,3 +126,4 @@ if __name__=="__main__":
         if args.lr_decay:
             lr_scheduler.step()
     model.save_pretrained(args.saved_model)
+    tokenizer.save_pretrained(args.saved_model)
