@@ -60,7 +60,7 @@ def train(model, optimizer, dataloader, epoch):
         iterator.set_description('Epoch {}'.format(epoch))
         iterator.set_postfix(loss=loss.item())
 
-    overall_loss/len(dataloader)
+    overall_loss = overall_loss/len(dataloader)
     return overall_loss
 
 if __name__=="__main__":
