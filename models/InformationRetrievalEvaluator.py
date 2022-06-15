@@ -17,9 +17,9 @@ class InformationRetrievalEvaluator:
                  relevant_docs: Dict[str, Set[str]],  # qid => Set[cid]
                  corpus_chunk_size: int = 200,
                  mrr_at_k: List[int] = [1,3,5,10],
-                 ndcg_at_k: List[int] = [10],
-                 accuracy_at_k: List[int] = [1, 3, 5, 10],
-                 precision_recall_at_k: List[int] = [1, 3, 5, 10],
+                 ndcg_at_k: List[int] = [1,3,5,10],
+                 accuracy_at_k: List[int] = [1,3,5,10],
+                 precision_recall_at_k: List[int] = [1,3,5,10],
                  map_at_k: List[int] = [1,3,5,10],
                  show_progress_bar: bool = False,
                  batch_size: int = 32,
@@ -38,7 +38,7 @@ class InformationRetrievalEvaluator:
 
         self.corpus_ids = list(corpus.keys())
         self.corpus = [corpus[cid] for cid in self.corpus_ids]
-
+        
         self.relevant_docs = relevant_docs
         self.corpus_chunk_size = corpus_chunk_size
         self.mrr_at_k = mrr_at_k
