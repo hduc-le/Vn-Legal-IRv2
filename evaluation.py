@@ -1,4 +1,5 @@
 import os
+import logging
 import pandas as pd 
 import argparse
 import warnings
@@ -20,7 +21,8 @@ if __name__=="__main__":
     parser.add_argument("--batch_size", default=32, type=int, help="batch size for embedding legal docs")
     parser.add_argument("--pooling_output", default=True, type=bool, help="return model output with pooling operator")
     parser.add_argument("--eval_mode", default="full_id", type=str, help="the precision of evaluation, options are `full_id` and `law_id`")
-    parser.add_argument("--save_csv", default=None, type=str, help="path to save evaluation results to csv")
+    parser.add_argument("--save_path", default="./performance/", type=str, help="path to save evaluation results")
+    parser.add_argument("--saved_name", default="evaluation_results.csv", type=str, help="csv name file for evaluation results")
     args = parser.parse_args()
 
     device = get_device()
@@ -73,4 +75,8 @@ if __name__=="__main__":
     if args.save_csv:
         df_scores = pd.DataFrame.from_dict(scores).reset_index()
         df_scores = df_scores.rename(columns={'index': 'Top-k'})
+        if not os.path.exists(args.save_path):
+            os.makedirs(args.save_path)
+        df_scores.to_csv(os.path.join(args.save_path, args.saved_name), index=False)
+        print("Saved evaluation results to csv.")
     
