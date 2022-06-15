@@ -10,7 +10,6 @@ from transformers import (
 )
 from utils import *
 from losses.ContrastiveLoss import SupervisedContrastiveLoss
-
 warnings.filterwarnings('ignore')
 class DataForCL(torch.utils.data.Dataset):
     def __init__(self, encodings0, encodings1):
@@ -65,7 +64,7 @@ def train(model, optimizer, dataloader, epoch):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--paired_data", default="./generated_data", type=str, help="path to sentence-pairs for contrastive training")
+    parser.add_argument("--paired_data", default="./generated_data/train_pairs.pkl", type=str, help="path to sentence-pairs for contrastive training")
     parser.add_argument("--model_name_or_path", default="vinai/bartpho-word", type=str)
     parser.add_argument("--saved_model", default="saved_model/model-cl", type=str)
     parser.add_argument("--max_seq_len", default=300, type=int)
@@ -82,7 +81,7 @@ if __name__=="__main__":
     device = get_device()
 
     print(">> Preparing paired data for contrastive learning.")
-    segmented_pairs = load_parameter(os.path.join(args.paired_data, "train_pairs.pkl"))
+    segmented_pairs = load_parameter(args.paired_data)
 
     examples0 = [sent for sent, _ in segmented_pairs]
     examples1 = [sent for _, sent in segmented_pairs]
