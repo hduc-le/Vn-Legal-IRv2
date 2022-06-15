@@ -1,4 +1,5 @@
 import os
+import pandas as pd 
 import argparse
 import warnings
 warnings.filterwarnings('ignore')
@@ -19,6 +20,7 @@ if __name__=="__main__":
     parser.add_argument("--batch_size", default=32, type=int, help="batch size for embedding legal docs")
     parser.add_argument("--pooling_output", default=True, type=bool, help="return model output with pooling operator")
     parser.add_argument("--eval_mode", default="full_id", type=str, help="the precision of evaluation, options are `full_id` and `law_id`")
+    parser.add_argument("--save_csv", default=None, type=str, help="path to save evaluation results to csv")
     args = parser.parse_args()
 
     device = get_device()
@@ -68,3 +70,7 @@ if __name__=="__main__":
 
     scores, queries_result_list = ir_evaluator.compute_metrices(model=evaluator, 
                                                             corpus_embeddings=corpus_embeddings)
+    if args.save_csv:
+        df_scores = pd.DataFrame.from_dict(scores).reset_index()
+        df_scores = df_scores.rename(columns={'index': 'Top-k'})
+    
