@@ -44,10 +44,9 @@ def train(model, optimizer, dataloader, epoch):
         model_output1 = model(input_ids=input_ids1, attention_mask=attention_mask1)
 
         # compute loss
-        if args.pooling_output:
-            sent0_repr, sent1_repr = mean_pooling(model_output0, attention_mask0), mean_pooling(model_output1, attention_mask1)
-        else:
-            sent0_repr, sent1_repr = model_output0.last_hidden_state[:,-1,:], model_output1.last_hidden_state[:,-1,:]
+        
+        sent0_repr, sent1_repr = mean_pooling(model_output0, attention_mask0), mean_pooling(model_output1, attention_mask1)
+
         loss = loss_fct(sent0_repr, sent1_repr)
         overall_loss += loss.item()
 
@@ -71,7 +70,6 @@ if __name__=="__main__":
     parser.add_argument("--temperature", default=0.1, type=float, help="hyper-parameter for contrastive loss")
     parser.add_argument("--learning_rate", default=5e-5, type=float)
     parser.add_argument("--lr_decay", default=False, type=bool)
-    parser.add_argument("--pooling_output", default=True, type=bool, help="return model output with pooling operator")
     parser.add_argument("--decay_rate", default=0.96, type=float)
     parser.add_argument("--batch_size", default=4, type=int)
     parser.add_argument("--num_epochs", default=5, type=int)
