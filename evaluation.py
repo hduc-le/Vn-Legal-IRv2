@@ -19,7 +19,7 @@ if __name__=="__main__":
     parser.add_argument("--tokenizer_name_or_path", default="vinai/bartpho-mlm", type=str, help="path to pretrained tokenizer")
     parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str, help="path to word segmenter")
     parser.add_argument("--batch_size", default=32, type=int, help="batch size for embedding legal docs")
-    parser.add_argument("--is_huggingface_model", default=True, type=bool, help="select `True` if model for evaluation is a HuggingFace model, `False` if it's a custom model")
+    # parser.add_argument("--model_type", default="hg", type=str, help="set `hg` if model for evaluation is inherited from PreTrainedModel base class, `pt` if it's a pytorch custom model")
     parser.add_argument("--eval_mode", default="full_id", type=str, help="the precision of evaluation, options are `full_id` and `law_id`")
     parser.add_argument("--save_path", default=None, type=str, help="path to save evaluation results")
     parser.add_argument("--saved_name", default="evaluation_results.csv", type=str, help="csv name file for evaluation results")
@@ -36,9 +36,9 @@ if __name__=="__main__":
         annotators="wseg,pos,ner,parse", 
         max_heap_size="-Xmx2g"
     )
-    print(">> Load pretrained model...")
+    print(">> Load model...")
     model = AutoModel.from_pretrained(args.model_name_or_path)
-
+    
     print(">> Load pretrained tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name_or_path)
 
