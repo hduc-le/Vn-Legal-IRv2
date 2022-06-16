@@ -1,3 +1,4 @@
+from re import I
 import numpy as np
 import torch 
 from torch import nn, Tensor
@@ -14,34 +15,20 @@ class Evaluator(nn.Module):
         self.tokenizer = tokenizer
         self.word_segmenter = word_segmenter
         
-    def forward(self,
-        input_ids=None,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        labels=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
-        mlm_input_ids=None,
-        mlm_labels=None,
-    ):
-        outputs = self.model(
-            input_ids,
-            attention_mask=attention_mask,
+    def forward(self, inputs, from_huggingface=True):
+        if from_huggingface:
+            outputs = self.model(
+            input_ids=inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
             output_hidden_states=True
         )
+            # Perform pooling with model outputs
+            pooler_output = self.mean_pooling(outputs, attention_mask=inputs["attention_mask"])
+            return pooler_output
+        outputs = self.model(inputs)
+        return outputs
         
-        # Perform pooling with model outputs
-        pooler_output = self.mean_pooling(outputs, attention_mask=attention_mask)
-        last_hidden = outputs.last_hidden_state[:,-1,:]
         
-        return {
-            "pooler_output": pooler_output,
-            "last_hidden": last_hidden
-        }
 
     def encode(self, sentences: Union[str, List[str]],
                batch_size: int = 32,
@@ -49,7 +36,7 @@ class Evaluator(nn.Module):
                convert_to_numpy: bool = True,
                convert_to_tensor: bool = False,
                device: str = None,
-               encoded_type: str="pooler_output") -> Union[List[Tensor], np.ndarray, Tensor]:
+               from_huggingface: bool=True) -> Union[List[Tensor], np.ndarray, Tensor]:
         '''
         Get multiple embedding of sentences
         '''
@@ -68,7 +55,7 @@ class Evaluator(nn.Module):
             device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
         self.to(device)
-        
+        input_keys = ["input_ids", "attention_mask"]
         all_embeddings = []
         for start_index in trange(0, len(sentences), batch_size, desc="Processing", disable=not show_progress_bar):
             sentence_batch = sentences[start_index: start_index+batch_size]
@@ -84,13 +71,13 @@ class Evaluator(nn.Module):
                        padding='max_length', 
                        truncation=True, 
                        max_length=300,
-                       return_tensors='pt').to(device)
-            
+                       return_tensors='pt')
+
+            input_feats = {k: features[k].to(device) for k in input_keys}
             with torch.no_grad():
-                out_features = self.forward(input_ids=features["input_ids"], 
-                                   attention_mask=features["attention_mask"])
+                out_features = self.forward(input_feats, from_huggingface)
                 embeddings = []
-                for row in out_features[encoded_type]:
+                for row in out_features:
                     embeddings.append(row.cpu())
                 all_embeddings.extend(embeddings)
 
