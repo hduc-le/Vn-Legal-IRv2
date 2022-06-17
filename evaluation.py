@@ -52,7 +52,15 @@ if __name__=="__main__":
         raise NotImplementedError("Still not Implement !!!")
 
     evaluator = Evaluator(model, tokenizer, annotator)
-    
+    logging.info("Encode corpus:")
+    corpus_embeddings = evaluator.encode(
+        doc_refers,
+        batch_size=args.batch_size,
+        show_progress_bar=True,
+        convert_to_tensor=True,
+        from_huggingface=True if args.model_type == "hg" else False
+    )
+    logging.info("Corpus has been encoded successfully")
     logging.info("Loading Queries:")
     qa_test = load_parameter(os.path.join(args.legal_data, "test_question_answer.pkl"))
     dev_queries = {}
@@ -65,17 +73,17 @@ if __name__=="__main__":
     logging.info("Queries: {}".format(len(dev_queries)))
     logging.info("Corpus: {}".format(len(legal_dict)))
 
-    logging.info("Start Evaluation:")
-    ir_evaluator = InformationRetrievalEvaluator(dev_queries, 
-                                                legal_dict, 
-                                                relevant_docs,
+    logging.info("Start Evaluation")
+    ir_evaluator = InformationRetrievalEvaluator(queries=dev_queries, 
+                                                corpus=legal_dict, 
+                                                relevant_docs=relevant_docs,
                                                 show_progress_bar=True,
                                                 corpus_chunk_size=args.batch_size,
                                                 mrr_at_k=[1,3,5,10],
                                                 ndcg_at_k=[1,3,5,10],
                                                 name=args.name)
 
-    ir_evaluator(evaluator, output_path=args.save_to)
+    ir_evaluator(evaluator, output_path=args.save_to, corpus_embeddings=corpus_embeddings)
     
     # close the sever
     annotator.close()
