@@ -143,6 +143,25 @@ def cos_sim(a: Tensor, b: Tensor):
     out = torch.mm(a_norm, b_norm.transpose(0, 1)).cpu()
     return out
 
+def dot_score(a: Tensor, b: Tensor):
+    """
+    Computes the dot-product dot_prod(a[i], b[j]) for all i and j.
+    :return: Matrix with res[i][j]  = dot_prod(a[i], b[j])
+    """
+    if not isinstance(a, torch.Tensor):
+        a = torch.tensor(a)
+
+    if not isinstance(b, torch.Tensor):
+        b = torch.tensor(b)
+
+    if len(a.shape) == 1:
+        a = a.unsqueeze(0)
+
+    if len(b.shape) == 1:
+        b = b.unsqueeze(0)
+
+    return torch.mm(a, b.transpose(0, 1))
+    
 def mean_pooling(model_output, attention_mask):
     token_embeddings = model_output[0] #First element of model_output contains all token embeddings
     input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
