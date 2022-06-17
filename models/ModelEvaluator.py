@@ -6,7 +6,7 @@ from tqdm import trange
 from typing import Set, Union, List, Dict, Callable
 
 from transformers import AutoTokenizer, AutoModelForMaskedLM
-from utils import flatten2DList
+from utils import flatten2DList, get_device
 
 class Evaluator(nn.Module):
     def __init__(self, model, tokenizer, word_segmenter) -> None:
@@ -52,7 +52,7 @@ class Evaluator(nn.Module):
             input_was_string = True
 
         if device is None:
-            device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+            device = get_device()
 
         self.to(device)
         input_keys = ["input_ids", "attention_mask"]

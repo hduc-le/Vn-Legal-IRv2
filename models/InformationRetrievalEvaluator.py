@@ -501,7 +501,17 @@ class InformationRetrievalEvaluator:
                 for query_itr in range(len(query_embeddings)):
                     for sub_corpus_id, score in zip(pair_scores_top_k_idx[query_itr], pair_scores_top_k_values[query_itr]):
                         corpus_id = self.corpus_ids[corpus_start_idx+sub_corpus_id]
-                        queries_result_list[name][query_itr].append({'corpus_id': corpus_id, 'score': score})
+                        law_id, article_id = corpus_id.split("@")
+                        if law_id.endswith("nd-cp"):
+                            law_id = law_id.replace("nd-cp", "nđ-cp")
+                        if law_id.endswith("nđ-"):
+                            law_id = law_id.replace("nđ-", "nđ-cp")
+                        if law_id.endswith("nð-cp"):
+                            law_id = law_id.replace("nð-cp", "nđ-cp")
+                        if law_id == "09/2014/ttlt-btp-tandtc-vksndtc":
+                            law_id = "09/2014/ttlt-btp-tandtc-vksndtc-btc"
+                        full_id = law_id+"@"+article_id
+                        queries_result_list[name][query_itr].append({'full_id': full_id, 'score': score})
 
         logger.info("Queries: {}".format(len(self.queries)))
         logger.info("Corpus: {}\n".format(len(self.corpus)))
@@ -537,7 +547,7 @@ class InformationRetrievalEvaluator:
             # Accuracy@k - We count the result correct, if at least one relevant doc is accross the top-k documents
             for k_val in self.accuracy_at_k:
                 for hit in top_hits[0:k_val]:
-                    if hit['corpus_id'] in query_relevant_docs:
+                    if hit['full_id'] in query_relevant_docs:
                         num_hits_at_k[k_val] += 1
                         break
 
@@ -545,7 +555,7 @@ class InformationRetrievalEvaluator:
             for k_val in self.precision_recall_at_k:
                 num_correct = 0
                 for hit in top_hits[0:k_val]:
-                    if hit['corpus_id'] in query_relevant_docs:
+                    if hit['full_id'] in query_relevant_docs:
                         num_correct += 1
 
                 precisions_at_k[k_val].append(num_correct / k_val)
@@ -554,13 +564,13 @@ class InformationRetrievalEvaluator:
             # MRR@k
             for k_val in self.mrr_at_k:
                 for rank, hit in enumerate(top_hits[0:k_val]):
-                    if hit['corpus_id'] in query_relevant_docs:
+                    if hit['full_id'] in query_relevant_docs:
                         MRR[k_val] += 1.0 / (rank + 1)
                         break
 
             # NDCG@k
             for k_val in self.ndcg_at_k:
-                predicted_relevance = [1 if top_hit['corpus_id'] in query_relevant_docs else 0 for top_hit in top_hits[0:k_val]]
+                predicted_relevance = [1 if top_hit['full_id'] in query_relevant_docs else 0 for top_hit in top_hits[0:k_val]]
                 true_relevances = [1] * len(query_relevant_docs)
 
                 ndcg_value = self.compute_dcg_at_k(predicted_relevance, k_val) / self.compute_dcg_at_k(true_relevances, k_val)
@@ -572,7 +582,7 @@ class InformationRetrievalEvaluator:
                 sum_precisions = 0
 
                 for rank, hit in enumerate(top_hits[0:k_val]):
-                    if hit['corpus_id'] in query_relevant_docs:
+                    if hit['full_id'] in query_relevant_docs:
                         num_correct += 1
                         sum_precisions += num_correct / (rank + 1)
 
