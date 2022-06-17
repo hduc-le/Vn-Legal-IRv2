@@ -1,7 +1,6 @@
 import os
 import argparse
-import logging
-
+import logging 
 from tqdm import tqdm
 from utils import *
 from vncorenlp import VnCoreNLP
@@ -20,20 +19,20 @@ if __name__=="__main__":
     args = parser.parse_args()
 
     doc_refers = load_parameter(os.path.join(args.legal_data, "doc_refers_saved.pkl"))
+    segmented_docs = []
 
     logging.info("Load Word-Segmenter...")
-    annotator = VnCoreNLP(
+    with VnCoreNLP(
         args.word_segmenter, 
         annotators="wseg,pos,ner,parse", 
         max_heap_size="-Xmx2g"
-    )
-    segmented_docs = []
-    for doc in tqdm(doc_refers, desc="processing"):
-        try:
-            seg_doc = " ".join(flatten2DList(annotator.tokenize(doc)))
-        except:
-            seg_doc = doc
-        segmented_docs.append(seg_doc)
+    ) as annotator:
+        for doc in tqdm(doc_refers, desc="processing"):
+            try:
+                seg_doc = " ".join(flatten2DList(annotator.tokenize(doc)))
+            except:
+                seg_doc = doc
+            segmented_docs.append(seg_doc)
 
     save_parameter(segmented_docs, os.path.join(args.legal_data, "segmented_docs.pkl"))
     logging.info("Created segmented docs for reference successfully.")

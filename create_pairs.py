@@ -31,23 +31,21 @@ if __name__=="__main__":
             for item in qa_train for label in item["relevant_articles"]
     ]
     
-    logging.info("Load Word-Segmenter...")
-    annotator = VnCoreNLP(
-        args.word_segmenter, 
-        annotators="wseg,pos,ner,parse", 
-        max_heap_size="-Xmx2g"
-    )
     segmented_pairs = []
-    for pair in tqdm(qa_pairs, desc="Pairing"):
-        try:
-            sent0 = " ".join(flatten2DList(annotator.tokenize(pair[0])))
-            sent1 = " ".join(flatten2DList(annotator.tokenize(pair[1])))
-        except:
-            sent0 = pair[0]
-            sent1 = pair[1]
-        segmented_pairs.append(
-            [sent0, sent1]
-        )
+    logging.info("Load Word-Segmenter...")
+    with VnCoreNLP(args.word_segmenter, 
+    annotators="wseg,pos,ner,parse", 
+    max_heap_size="-Xmx2g") as annotator:
+        for pair in tqdm(qa_pairs, desc="Pairing"):
+            try:
+                sent0 = " ".join(flatten2DList(annotator.tokenize(pair[0])))
+                sent1 = " ".join(flatten2DList(annotator.tokenize(pair[1])))
+            except:
+                sent0 = pair[0]
+                sent1 = pair[1]
+            segmented_pairs.append(
+                [sent0, sent1]
+            )
     save_parameter(segmented_pairs, os.path.join(args.legal_data, "train_pairs.pkl"))
     logging.info("Created training pairs successfully.")
     save_parameter(qa_test, os.path.join(args.legal_data, "test_question_answer.pkl"))
