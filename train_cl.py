@@ -2,6 +2,7 @@ import os
 import torch 
 import argparse
 import warnings
+import logging
 
 from tqdm import tqdm
 from transformers import (
@@ -11,6 +12,13 @@ from transformers import (
 from utils import *
 from losses.ContrastiveLoss import SupervisedContrastiveLoss
 warnings.filterwarnings('ignore')
+
+logging.basicConfig(
+    format="%(asctime)s %(message)s", 
+    datefmt="%m/%d/%Y %I:%M:%S %p %Z",
+    level = logging.INFO
+)
+
 class DataForCL(torch.utils.data.Dataset):
     def __init__(self, encodings0, encodings1):
         self.encodings0 = encodings0
@@ -78,13 +86,13 @@ if __name__=="__main__":
     
     device = get_device()
 
-    print(">> Preparing paired data for contrastive learning.")
+    logging.info("Preparing paired data for contrastive learning.")
     segmented_pairs = load_parameter(args.paired_data)
 
     examples0 = [sent for sent, _ in segmented_pairs]
     examples1 = [sent for _, sent in segmented_pairs]
 
-    print(">> Download pretrained tokenizer")
+    logging.info("Download pretrained tokenizer")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
 
     encodings0 = tokenizer(
@@ -107,7 +115,7 @@ if __name__=="__main__":
                                         batch_size=args.batch_size,
                                         shuffle=True)
 
-    print(">> Download pretrained model")
+    logging.info("Download pretrained model")
     model = AutoModel.from_pretrained(args.model_name_or_path)
     model.to(device)
 
@@ -115,11 +123,11 @@ if __name__=="__main__":
     if args.lr_decay:
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=args.decay_rate)
 
-    print("============= Start training =============")
+    logging.info("Start Training")
     for epoch in range(args.num_epochs):
         loss = train(model, optim, train_loader, epoch)
-        print(f'>> Finished epoch {epoch}.')
-        print(">> Epoch loss: {:.5f}".format(loss))
+        logging.info(f'Finished epoch {epoch}.')
+        logging.info("Epoch loss: {:.5f}".format(loss))
         if args.lr_decay:
             lr_scheduler.step()
     model.save_pretrained(args.saved_model)
