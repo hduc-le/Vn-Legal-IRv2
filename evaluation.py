@@ -87,4 +87,6 @@ if __name__=="__main__":
 
     # scores, queries_result_list = ir_evaluator.compute_metrices(model=evaluator, 
     #                                                         corpus_embeddings=corpus_embeddings)
-    
+
+    # close the sever
+    annotator.close()
