@@ -1,9 +1,16 @@
 import json
+import logging
 import pickle
 import re
 import torch 
 from torch import Tensor
-from zmq import device
+from typing import *
+from sklearn.feature_extraction.text import TfidfVectorizer
+logging.basicConfig(
+    format="%(asctime)s %(message)s", 
+    datefmt="%m/%d/%Y %I:%M:%S %p %Z",
+    level = logging.INFO
+)
 def load_json(path):
     """
     Load json dataset into python object (dictionary).
@@ -166,3 +173,30 @@ def mean_pooling(model_output, attention_mask):
     token_embeddings = model_output[0] #First element of model_output contains all token embeddings
     input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
     return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
+def get_tfidf_embeddings(docs: Union[str, List[str]],
+                         vectorizer: TfidfVectorizer = None,
+                         max_features: int = 300,
+                         convert_to_tensor: bool = False,
+                         conver_to_numpy: bool = True,
+                         ):
+    """
+    Applies TF-IDF to learn document representation.
+    Args:
+        ....
+    """
+    if convert_to_tensor:
+        conver_to_numpy = False
+
+    if vectorizer is None:
+        logging.info("[W] Learning Tfidf Vectorizer ...")
+        vectorizer = TfidfVectorizer(max_features=max_features)
+        vectorizer.fit(docs)
+    out_features = vectorizer.transform(docs)
+
+    if convert_to_tensor:
+        out_features = torch.from_numpy(
+            out_features.toarray().astype(np.float32))
+    if conver_to_numpy:
+        out_features = out_features.toarray().astype(np.float32)
+    return out_features
