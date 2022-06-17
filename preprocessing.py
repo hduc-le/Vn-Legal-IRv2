@@ -1,7 +1,14 @@
 import os 
 import argparse
+import logging
+
 from tqdm import tqdm
 from utils import *
+logging.basicConfig(
+    format="%(asctime)s %(message)s", 
+    datefmt="%m/%d/%Y %I:%M:%S %p %Z",
+    level = logging.INFO
+)
 
 if __name__ == "__main__":
 
@@ -12,24 +19,24 @@ if __name__ == "__main__":
 
     data = load_json(os.path.join(args.raw_data, "legal_corpus.json"))
 
-    print("=====================") 
-    print("Start create legal dict.")
+    
+    logging.info("Start create legal dict.")
 
     legal_dict = {
         doc["law_id"]+"@"+article["article_id"]: clean_text(article["title"] + " " + article["text"]) \
             for doc in tqdm(data, desc="Creating legal dict") \
                 for article in doc["articles"]
     }
-    print("=====================") 
-    print("Start create doc refer.")
+    
+    logging.info("Start create doc refer.")
     doc_refers = [doc for doc in legal_dict.values()]
     
     os.makedirs(args.legal_data, exist_ok=True)
     save_parameter(doc_refers, os.path.join(args.legal_data, "doc_refers_saved.pkl"))
     save_json(legal_dict, os.path.join(args.legal_data, "legal_dict.json"))
 
-    print("=====================") 
-    print("Created Doc Data.")
-    print("Created legal dictionary.")
+    
+    logging.info("Created Doc Data.")
+    logging.info("Created legal dictionary.")
     
     
