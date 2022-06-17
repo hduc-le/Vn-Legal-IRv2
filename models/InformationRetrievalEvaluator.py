@@ -61,7 +61,7 @@ class InformationRetrievalEvaluator:
         
         self.show_progress_bar = show_progress_bar
         self.batch_size = batch_size
-    
+        self.name = name
         self.score_functions = score_functions
         self.score_function_names = sorted(list(self.score_functions.keys()))
         self.main_score_function = main_score_function
