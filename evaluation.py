@@ -78,7 +78,7 @@ if __name__=="__main__":
                                                 corpus=legal_dict, 
                                                 relevant_docs=relevant_docs,
                                                 show_progress_bar=True,
-                                                corpus_chunk_size=args.batch_size,
+                                                corpus_chunk_size=1000,
                                                 mrr_at_k=[1,3,5,10],
                                                 ndcg_at_k=[1,3,5,10],
                                                 name=args.name)
