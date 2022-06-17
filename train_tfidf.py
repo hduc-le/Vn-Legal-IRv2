@@ -1,7 +1,7 @@
 import logging
 import os
 import argparse
-from utils import load_parameter, save_parameter
+from utils import get_tfidf_embeddings, load_parameter, save_parameter
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 logging.basicConfig(
@@ -25,6 +25,10 @@ if __name__=="__main__":
                         type=str,
                         help="the path/location for saving model"
     )
+    parser.add_argument("--encode_corpus",
+                        default=False,
+                        type=bool
+    )
     args = parser.parse_args()
     
     doc_refers = load_parameter(os.path.join(args.legal_data, "doc_refers_saved.pkl"))
@@ -34,5 +38,11 @@ if __name__=="__main__":
     logging.info("[W] Learning Tfidf Vectorizer ...")
     tfidf_vectorizer = TfidfVectorizer(max_features=args.max_features)
     tfidf_vectorizer.fit(segmented_docs)
-
+    if args.encode_corpus:
+        tfidf_encoded_doc_refers = get_tfidf_embeddings(segmented_docs, 
+                                        vectorizer=tfidf_vectorizer, 
+                                        max_features=args.max_features, 
+                                        convert_to_tensor=True
+                                    )
+        save_parameter(tfidf_encoded_doc_refers, os.path.join(args.legal_data, "tfidf_encoded_doc_refers.pkl"))
     save_parameter(tfidf_vectorizer, os.path.join(args.save_path, save_format))

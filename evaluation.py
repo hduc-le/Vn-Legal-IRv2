@@ -25,7 +25,7 @@ if __name__=="__main__":
     parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str, help="path to word segmenter")
     parser.add_argument("--batch_size", default=32, type=int, help="batch size for embedding legal docs")
     parser.add_argument("--model_type", default="hg", type=str, help="set `hg` if model for evaluation is inherited from PreTrainedModel base class, `pt` if it's a pytorch custom model")
-    # parser.add_argument("--eval_mode", default="full_id", type=str, help="the precision of evaluation, options are `full_id` and `law_id`")
+    parser.add_argument("--tfidf_model", default=None, type=str, help="path to tfidf model")
     parser.add_argument("--save_to", default=None, type=str, help="path to save evaluation results")
     parser.add_argument("--name", default="evaluation_results.csv", type=str, help="csv name file for evaluation results")
     args = parser.parse_args()
@@ -51,6 +51,12 @@ if __name__=="__main__":
     else:
         raise NotImplementedError("Still not Implement !!!")
 
+    tfidf_embeddings = None
+    if args.tfidf_model:
+        logging.info("Load TF-IDF model and encoded corpus")
+        tfidf_vectorizer = load_parameter(args.tfidf_model)
+        if os.path.exists(os.path.join(args.legal_data, "tfidf_encoded_doc_refers.pkl")):
+            tfidf_embeddings = load_parameter(os.path.join(args.legal_data, "tfidf_encoded_doc_refers.pkl"))
     evaluator = Evaluator(model, tokenizer, annotator)
     logging.info("Encode corpus:")
     corpus_embeddings = evaluator.encode(
@@ -83,7 +89,12 @@ if __name__=="__main__":
                                                 ndcg_at_k=[1,3,5,10],
                                                 name=args.name)
 
-    ir_evaluator(evaluator, output_path=args.save_to, corpus_embeddings=corpus_embeddings)
+    ir_evaluator(model=evaluator, 
+        output_path=args.save_to, 
+        corpus_embeddings=corpus_embeddings, 
+        tfidf_model=tfidf_vectorizer if args.tfidf_model else None,
+        tfidf_embeddings=tfidf_embeddings
+    )
     
     # close the sever
     annotator.close()
