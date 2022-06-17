@@ -1,11 +1,8 @@
-from re import I
 import numpy as np
 import torch 
 from torch import nn, Tensor
 from tqdm import trange
 from typing import Set, Union, List, Dict, Callable
-
-from transformers import AutoTokenizer, AutoModelForMaskedLM
 from utils import flatten2DList, get_device
 
 class Evaluator(nn.Module):
@@ -35,7 +32,7 @@ class Evaluator(nn.Module):
                show_progress_bar: bool = None,
                convert_to_numpy: bool = True,
                convert_to_tensor: bool = False,
-               device: str = None,
+               device=None,
                from_huggingface: bool=True) -> Union[List[Tensor], np.ndarray, Tensor]:
         '''
         Get multiple embedding of sentences
