@@ -76,17 +76,6 @@ if __name__=="__main__":
                                                 name=args.name)
 
     ir_evaluator(evaluator, output_path=args.save_to)
-
-    # print("============== Start Evaluation ==============")
-    # ir_evaluator = InformationRetrievalEvaluator(queries=queries, 
-    #                                       corpus=legal_dict, 
-    #                                       relevant_docs=relevant_docs, 
-    #                                       corpus_chunk_size=1000, 
-    #                                       show_progress_bar=True, 
-    #                                       eval_mode=args.eval_mode)
-
-    # scores, queries_result_list = ir_evaluator.compute_metrices(model=evaluator, 
-    #                                                         corpus_embeddings=corpus_embeddings)
-
+    
     # close the sever
     annotator.close()
