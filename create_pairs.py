@@ -1,10 +1,16 @@
 import os
+import logging
 import argparse
 from tqdm import tqdm
 from utils import *
 from vncorenlp import VnCoreNLP
 from sklearn.model_selection import train_test_split
 
+logging.basicConfig(
+    format="%(asctime)s %(message)s", 
+    datefmt="%m/%d/%Y %I:%M:%S %p %Z",
+    level = logging.INFO
+)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -19,13 +25,13 @@ if __name__=="__main__":
 
     qa_train, qa_test = train_test_split(train_question_answer["items"], test_size=1-args.train_ratio, random_state=42)
 
-    print(">> Pairing the contrastive setences.")
+    logging.info("Pairing the contrastive setences.")
     qa_pairs = [
         [clean_text(item["question"]), legal_dict[label["law_id"]+"@"+label["article_id"]]]\
             for item in qa_train for label in item["relevant_articles"]
     ]
     
-    print(">> Load Word-Segmenter...")
+    logging.info("Load Word-Segmenter...")
     annotator = VnCoreNLP(
         args.word_segmenter, 
         annotators="wseg,pos,ner,parse", 
@@ -43,6 +49,6 @@ if __name__=="__main__":
             [sent0, sent1]
         )
     save_parameter(segmented_pairs, os.path.join(args.legal_data, "train_pairs.pkl"))
-    print("Created training pairs successfully.")
+    logging.info("Created training pairs successfully.")
     save_parameter(qa_test, os.path.join(args.legal_data, "test_question_answer.pkl"))
-    print("Created test questions-answers.")
+    logging.info("Created test questions-answers.")
