@@ -32,7 +32,7 @@ class InformationRetrievalEvaluator:
                  show_progress_bar: bool = False,
                  batch_size: int = 32,
                  score_functions: List[Callable[[Tensor, Tensor], Tensor]] = {
-                        'cos_sim': cos_sim
+                        'cos_sim': cos_sim, 'dot_score': dot_score
                     },  # Score function, higher=more similar
                  main_score_function: str = None,
                  eval_mode: str = 'full_id', # full_id means the precision of recommend is law id and article id, law_id is otherwise
@@ -40,6 +40,7 @@ class InformationRetrievalEvaluator:
                  name: str = "",
                 
                  ):
+        
         self.queries_ids = []
         for qid in queries:
             if qid in relevant_docs and len(relevant_docs[qid]) > 0:
@@ -62,6 +63,7 @@ class InformationRetrievalEvaluator:
         self.show_progress_bar = show_progress_bar
         self.batch_size = batch_size
         self.name = name
+        self.write_csv = write_csv
         self.score_functions = score_functions
         self.score_function_names = sorted(list(self.score_functions.keys()))
         self.main_score_function = main_score_function
@@ -79,6 +81,7 @@ class InformationRetrievalEvaluator:
             for k in precision_recall_at_k:
                 self.csv_headers.append("{}-Precision@{}".format(score_name, k))
                 self.csv_headers.append("{}-Recall@{}".format(score_name, k))
+                self.csv_headers.append("{}-F2-score@{}".format(score_name, k))
 
             for k in mrr_at_k:
                 self.csv_headers.append("{}-MRR@{}".format(score_name, k))
@@ -118,6 +121,7 @@ class InformationRetrievalEvaluator:
                 for k in self.precision_recall_at_k:
                     output_data.append(scores[name]['precision@k'][k])
                     output_data.append(scores[name]['recall@k'][k])
+                    output_data.append(scores[name]['f2-score@k'][k])
 
                 for k in self.mrr_at_k:
                     output_data.append(scores[name]['mrr@k'][k])
@@ -137,7 +141,7 @@ class InformationRetrievalEvaluator:
         else:
             return scores[self.main_score_function]['map@k'][max(self.map_at_k)]
 
-    def compute_metrices(self, model, corpus_model = None, corpus_embeddings: Tensor = None) -> Dict[str, float]:
+    def compute_metrices(self, model, corpus_model = None, tfidf_model = None ,corpus_embeddings: Tensor = None, tfidf_embeddings: Tensor = None) -> Dict[str, float]:
         if corpus_model is None:
             corpus_model = model
 
@@ -145,8 +149,9 @@ class InformationRetrievalEvaluator:
 
         # Compute embedding for the queries
         model_query_embeddings = model.encode(self.queries, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, convert_to_tensor=True)
-    
-
+        if tfidf_model:
+            tfidf_query_embeddings = get_tfidf_embeddings(self.queries, vectorizer=tfidf_model, max_features=model_query_embeddings.shape[-1], convert_to_tensor=True)
+        
         queries_result_list = {}
         for name in self.score_functions:
             queries_result_list[name] = [[] for _ in range(len(model_query_embeddings))]
@@ -158,14 +163,22 @@ class InformationRetrievalEvaluator:
             #Encode chunk of corpus
             if corpus_embeddings is None:
                 sub_model_corpus_embeddings = corpus_model.encode(self.corpus[corpus_start_idx:corpus_end_idx], show_progress_bar=False, batch_size=self.batch_size, convert_to_tensor=True)
+                if tfidf_model:
+                    sub_tfidf_corpus_embeddings = get_tfidf_embeddings(self.corpus[corpus_start_idx:corpus_end_idx],vectorizer=tfidf_model, max_features=sub_model_corpus_embeddings.shape[-1], convert_to_tensor=True)
             else:
                 sub_model_corpus_embeddings = corpus_embeddings[corpus_start_idx:corpus_end_idx]
+                if tfidf_model:
+                    sub_tfidf_corpus_embeddings = tfidf_embeddings[corpus_start_idx:corpus_end_idx]
     
     
             #Compute cosine similarites
             for name, score_function in self.score_functions.items():
-                pair_scores = score_function(model_query_embeddings, sub_model_corpus_embeddings)
-
+                model_pair_scores = score_function(model_query_embeddings, sub_model_corpus_embeddings)
+                if tfidf_model:
+                    tfidf_pair_scores = score_function(tfidf_query_embeddings, sub_tfidf_corpus_embeddings)
+                    pair_scores = torch.mean(torch.stack([model_pair_scores, tfidf_pair_scores], dim=1), dim=1)
+                else:
+                    pair_scores = model_pair_scores
                 #Get top-k values
                 pair_scores_top_k_values, pair_scores_top_k_idx = torch.topk(pair_scores, min(max_k, len(pair_scores[0])), dim=1, largest=True, sorted=False)
                 pair_scores_top_k_values = pair_scores_top_k_values.cpu().tolist()
