@@ -381,31 +381,24 @@ class InformationRetrievalEvaluator:
 
     def output_scores(self, scores):
 
-        logging.info("\nAccuracy")
         for k in scores['accuracy@k']:
             logging.info("Accuracy@{}: {:.2f}%".format(k, scores['accuracy@k'][k]*100))
 
-        logging.info("Precision")
         for k in scores['precision@k']:
             logging.info("Precision@{}: {:.2f}%".format(k, scores['precision@k'][k]*100))
 
-        logging.info("Recall")
         for k in scores['recall@k']:
             logging.info("Recall@{}: {:.2f}%".format(k, scores['recall@k'][k]*100))
         
-        logging.info("F2 Score")
         for k in scores['f2-score@k']:
             logging.info("f2-score@{}: {:.2f}%".format(k, scores['f2-score@k'][k]*100))
         
-        logging.info("MRR")
         for k in scores['mrr@k']:
             logging.info("MRR@{}: {:.4f}".format(k, scores['mrr@k'][k]))
         
-        logging.info("NDCG")
         for k in scores['ndcg@k']:
             logging.info("NDCG@{}: {:.4f}".format(k, scores['ndcg@k'][k]))
         
-        logging.info("Average Precision")
         for k in scores['map@k']:
             logging.info("MAP@{}: {:.4f}".format(k, scores['map@k'][k]))
 
