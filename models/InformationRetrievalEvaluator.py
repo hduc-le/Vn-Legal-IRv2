@@ -100,7 +100,7 @@ class InformationRetrievalEvaluator:
 
         logging.info("Information Retrieval Evaluation on " + self.name + " dataset" + out_txt)
 
-        scores = self.compute_metrices(model, *args, **kwargs)
+        scores, _ = self.compute_metrices(model, *args, **kwargs)
 
         # Write results to disc
         if output_path is not None and self.write_csv:
