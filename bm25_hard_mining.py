@@ -52,7 +52,10 @@ if __name__=="__main__":
         for item in tqdm(QA_train, desc="processing"):
             
             question = clean_text(item["question"])
-            tokenized_question = flatten2DList(annotator.tokenize(question))
+            try:
+                tokenized_question = flatten2DList(annotator.tokenize(question))
+            except:
+                tokenized_question = question.split()
             segmented_question = " ".join(tokenized_question)
 
             doc_scores = bm25.get_scores(tokenized_question)
@@ -64,9 +67,14 @@ if __name__=="__main__":
                     candidates.pop(lid)
                 positive = legal_dict[lid]
                 negative = legal_dict[candidates[-1]]
-
-                seg_positive = " ".join(flatten2DList(annotator.tokenize(positive)))
-                seg_negative = " ".join(flatten2DList(annotator.tokenize(negative)))
+                try:
+                    seg_positive = " ".join(flatten2DList(annotator.tokenize(positive)))
+                except:
+                    seg_positive = positive
+                try:
+                    seg_negative = " ".join(flatten2DList(annotator.tokenize(negative)))
+                except:
+                    seg_negative = negative
                 
                 triple_pairs.append(
                     [segmented_question, seg_positive, seg_negative]
