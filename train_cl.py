@@ -20,9 +20,10 @@ logging.basicConfig(
 )
 
 class DataForCL(torch.utils.data.Dataset):
-    def __init__(self, encodings0, encodings1):
+    def __init__(self, encodings0, encodings1, encodings2=None):
         self.encodings0 = encodings0
         self.encodings1 = encodings1
+        self.encodings2 = encodings2
     def __getitem__(self, idx):
         features0 = {
             key: torch.tensor(val[idx]) for key, val in self.encodings0.items()
@@ -30,7 +31,12 @@ class DataForCL(torch.utils.data.Dataset):
         features1 = {
             key: torch.tensor(val[idx]) for key, val in self.encodings1.items()
         }
-        return features0, features1
+        if self.encodings2:
+            features2 = {
+                key: torch.tensor(val[idx]) for key, val in self.encodings2.items()
+            }
+            return {"feats0":features0, "feats1": features1, "feats2":features2}
+        return {"feats0": features0, "feats1": features1}
     def __len__(self):
         return len(self.encodings0['input_ids'])
 
@@ -38,10 +44,20 @@ def train(model, optimizer, dataloader, epoch):
     overall_loss = 0.0
     loss_fct = SupervisedContrastiveLoss(args.temperature)
     iterator = tqdm(dataloader, leave=True)
+    sent2_repr = None
     model.train()
     
-    for ft0, ft1 in iterator:
+    for batch in iterator:
         optimizer.zero_grad()
+
+        if len(batch) == 2:
+            ft0, ft1 = batch["feats0"], batch["feats1"]
+        elif len(batch) == 3:
+            ft0, ft1, ft2 = batch["feats0"], batch["feats1"], batch["feats2"]
+            input_ids2 = ft2["input_ids"].to(device)
+            attention_mask2 = ft2["attention_mask"].to(device)
+            model_output2 = model(input_ids=input_ids2, attention_mask=attention_mask2)
+            sent2_repr = mean_pooling(model_output2, attention_mask2)
 
         input_ids0 = ft0["input_ids"].to(device)
         attention_mask0 = ft0["attention_mask"].to(device)
@@ -54,8 +70,8 @@ def train(model, optimizer, dataloader, epoch):
         # compute loss
         
         sent0_repr, sent1_repr = mean_pooling(model_output0, attention_mask0), mean_pooling(model_output1, attention_mask1)
-
-        loss = loss_fct(sent0_repr, sent1_repr)
+        
+        loss = loss_fct(sent0_repr, sent1_repr, sent2_repr)
         overall_loss += loss.item()
 
         # backprop
@@ -88,13 +104,29 @@ if __name__=="__main__":
 
     logging.info("Preparing paired data for contrastive learning.")
     segmented_pairs = load_parameter(args.paired_data)
-
-    examples0 = [sent for sent, _ in segmented_pairs]
-    examples1 = [sent for _, sent in segmented_pairs]
+    num_sent = len(segmented_pairs[0])
 
     logging.info("Download pretrained tokenizer")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
+    
+    encodings2 = None
+    if num_sent == 2:
+        examples0 = [sent for sent, _ in segmented_pairs]
+        examples1 = [sent for _, sent in segmented_pairs]
 
+    elif num_sent == 3:
+        examples0 = [sent for sent, _, _ in segmented_pairs]
+        examples1 = [sent for _, sent, _ in segmented_pairs]
+        examples2 = [sent for _, _, sent in segmented_pairs]
+
+        encodings2 = tokenizer(
+            examples2,
+            truncation=True,
+            padding="max_length",
+            max_length=args.max_seq_len,
+            return_tensors="pt"
+        )
+    
     encodings0 = tokenizer(
         examples0,
         truncation=True,
@@ -109,8 +141,8 @@ if __name__=="__main__":
         max_length=args.max_seq_len,
         return_tensors="pt"
     )
-
-    train_dataset = DataForCL(encodings0, encodings1)
+        
+    train_dataset = DataForCL(encodings0, encodings1, encodings2)
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                         batch_size=args.batch_size,
                                         shuffle=True)
