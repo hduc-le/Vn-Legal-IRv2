@@ -14,13 +14,16 @@ class SupervisedContrastiveLoss(nn.Module):
         cos_batch = torch.cat(cosine_vals, dim=0).view(z1.shape[0], -1)
         denom = torch.sum(torch.exp(cos_batch),dim=1)
         return denom
-    def _contrastive_loss(self, z1, z2):
+    def _contrastive_loss(self, z1, z2, z3):
         num = torch.exp(self.sim(z1, z2)/self.temperature)
-        denom = self._eval_denom(z1, z2)
+        if z3:
+            denom = self._eval_denom(z1, z2) + self._eval_denom(z1, z3)
+        else:
+            denom = self._eval_denom(z1, z2)
         loss = -torch.mean(torch.log(num/denom))
         return loss
-    def forward(self, z1, z2):
-        return self._contrastive_loss(z1, z2)
+    def forward(self, z1, z2, z3=None):
+        return self._contrastive_loss(z1, z2, z3)
 
 if __name__=="__main__":
     pass
