@@ -31,7 +31,7 @@ class DataForCL(torch.utils.data.Dataset):
         features1 = {
             key: torch.tensor(val[idx]) for key, val in self.encodings1.items()
         }
-        if self.encodings2:
+        if self.encodings2 is not None:
             features2 = {
                 key: torch.tensor(val[idx]) for key, val in self.encodings2.items()
             }
@@ -108,7 +108,7 @@ if __name__=="__main__":
 
     logging.info("Download pretrained tokenizer")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
-    
+
     encodings2 = None
     if num_sent == 2:
         examples0 = [sent for sent, _ in segmented_pairs]
