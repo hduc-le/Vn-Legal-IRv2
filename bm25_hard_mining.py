@@ -38,8 +38,9 @@ if __name__=="__main__":
 
     if os.path.exists(os.path.join(args.saved_model, args.model_name)):
         logging.info("Train BM25 model")
-        seg_doc_refers = load_parameter(os.path.join(args.legal_data, "segmented_docs.pkl"))
-        bm25 = BM25Okapi(seg_doc_refers)
+        segmented_docs = load_parameter(os.path.join(args.legal_data, "segmented_docs.pkl"))
+        tokenized_docs = [doc.split() for doc in segmented_docs]
+        bm25 = BM25Okapi(tokenized_docs)
     else:
         logging.info("Load Bm25 Model.")
         bm25 = load_parameter(os.path.join(args.saved_model, args.model_name))
