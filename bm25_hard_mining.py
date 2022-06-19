@@ -41,6 +41,7 @@ if __name__=="__main__":
         segmented_docs = load_parameter(os.path.join(args.legal_data, "segmented_docs.pkl"))
         tokenized_docs = [doc.split() for doc in segmented_docs]
         bm25 = BM25Okapi(tokenized_docs)
+        save_parameter(bm25, os.path.join(args.saved_model, args.model_name))
     else:
         logging.info("Load Bm25 Model.")
         bm25 = load_parameter(os.path.join(args.saved_model, args.model_name))
