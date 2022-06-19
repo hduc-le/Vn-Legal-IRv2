@@ -36,7 +36,7 @@ if __name__=="__main__":
     train_question_answer = load_json(os.path.join(args.raw_data, "train_question_answer.json"))
     QA_train, QA_dev = train_test_split(train_question_answer["items"], test_size=1-args.train_ratio, random_state=42)
 
-    if os.path.exists(os.path.join(args.saved_model, args.model_name)):
+    if not os.path.exists(os.path.join(args.saved_model, args.model_name)):
         logging.info("Train BM25 model")
         segmented_docs = load_parameter(os.path.join(args.legal_data, "segmented_docs.pkl"))
         tokenized_docs = [doc.split() for doc in segmented_docs]
