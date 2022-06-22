@@ -52,7 +52,7 @@ if __name__=="__main__":
         raise NotImplementedError("Still not Implement !!!")
 
     tfidf_embeddings = None
-    if args.tfidf_model:
+    if args.tfidf_model is not None:
         logging.info("Load TF-IDF model and encoded corpus")
         tfidf_vectorizer = load_parameter(args.tfidf_model)
         if os.path.exists(os.path.join(args.legal_data, "tfidf_encoded_doc_refers.pkl")):
@@ -92,7 +92,7 @@ if __name__=="__main__":
     ir_evaluator(model=evaluator, 
         output_path=args.save_to, 
         corpus_embeddings=corpus_embeddings, 
-        tfidf_model=tfidf_vectorizer if args.tfidf_model else None,
+        tfidf_model=tfidf_vectorizer if args.tfidf_model is not None else None,
         tfidf_embeddings=tfidf_embeddings
     )
     

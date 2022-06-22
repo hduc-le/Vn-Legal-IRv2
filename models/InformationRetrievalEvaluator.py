@@ -149,7 +149,7 @@ class InformationRetrievalEvaluator:
 
         # Compute embedding for the queries
         model_query_embeddings = model.encode(self.queries, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, convert_to_tensor=True)
-        if tfidf_model:
+        if tfidf_model is not None:
             tfidf_query_embeddings = get_tfidf_embeddings(self.queries, vectorizer=tfidf_model, max_features=300, convert_to_tensor=True)
         
         queries_result_list = {}
@@ -163,18 +163,18 @@ class InformationRetrievalEvaluator:
             #Encode chunk of corpus
             if corpus_embeddings is None:
                 sub_model_corpus_embeddings = corpus_model.encode(self.corpus[corpus_start_idx:corpus_end_idx], show_progress_bar=False, batch_size=self.batch_size, convert_to_tensor=True)
-                if tfidf_model:
+                if tfidf_model is not None:
                     sub_tfidf_corpus_embeddings = get_tfidf_embeddings(self.corpus[corpus_start_idx:corpus_end_idx],vectorizer=tfidf_model, max_features=300, convert_to_tensor=True)
             else:
                 sub_model_corpus_embeddings = corpus_embeddings[corpus_start_idx:corpus_end_idx]
-                if tfidf_model:
+                if tfidf_model is not None:
                     sub_tfidf_corpus_embeddings = tfidf_embeddings[corpus_start_idx:corpus_end_idx]
     
     
             #Compute cosine similarites
             for name, score_function in self.score_functions.items():
                 model_pair_scores = score_function(model_query_embeddings, sub_model_corpus_embeddings)
-                if tfidf_model:
+                if tfidf_model is not None:
                     tfidf_pair_scores = score_function(tfidf_query_embeddings, sub_tfidf_corpus_embeddings)
                     pair_scores = torch.mean(torch.stack([model_pair_scores, tfidf_pair_scores], dim=1), dim=1)
                 else:
