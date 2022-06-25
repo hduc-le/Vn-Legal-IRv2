@@ -17,7 +17,8 @@ class SupervisedContrastiveLoss(nn.Module):
     def _contrastive_loss(self, z1, z2, z3):
         num = torch.exp(self.sim(z1, z2)/self.temperature)
         if z3 is not None:
-            denom = num + self._eval_denom(z1, z3)
+            # denom = num + self._eval_denom(z1, z3)
+            denom = self._eval_denom(z1, z2) + self._eval_denom(z1, z3)
         else:
             denom = self._eval_denom(z1, z2)
         loss = -torch.mean(torch.log(num/denom))
