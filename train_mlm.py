@@ -117,10 +117,11 @@ def main():
         logging("Epoch loss: {:.5f}".format(loss))
         if args.lr_decay:
             lr_scheduler.step()
+
+        logging.info("Saving the model and tokenizer")
+        model.save_pretrained(args.saved_model)
+        tokenizer.save_pretrained(args.saved_model)
     
-    logging.info("Saving the model and tokenizer")
-    model.save_pretrained(args.saved_model)
-    tokenizer.save_pretrained(args.saved_model)
     logging.info("Done.")
 
 if __name__=="__main__":
