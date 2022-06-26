@@ -141,16 +141,16 @@ class InformationRetrievalEvaluator:
         else:
             return scores[self.main_score_function]['map@k'][max(self.map_at_k)]
 
-    def compute_metrices(self, model, corpus_model = None, tfidf_model = None ,corpus_embeddings: Tensor = None, tfidf_embeddings: Tensor = None) -> Dict[str, float]:
+    def compute_metrices(self, model, corpus_model = None, tfidf_model = None,max_seq_len=300, corpus_embeddings: Tensor = None, tfidf_embeddings: Tensor = None) -> Dict[str, float]:
         if corpus_model is None:
             corpus_model = model
 
         max_k = max(max(self.mrr_at_k), max(self.ndcg_at_k), max(self.accuracy_at_k), max(self.precision_recall_at_k), max(self.map_at_k))
 
         # Compute embedding for the queries
-        model_query_embeddings = model.encode(self.queries, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, convert_to_tensor=True)
+        model_query_embeddings = model.encode(self.queries, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, max_seq_len=max_seq_len, convert_to_tensor=True)
         if tfidf_model is not None:
-            tfidf_query_embeddings = get_tfidf_embeddings(self.queries, vectorizer=tfidf_model, max_features=300, convert_to_tensor=True)
+            tfidf_query_embeddings = get_tfidf_embeddings(self.queries, vectorizer=tfidf_model, max_features=max_seq_len, convert_to_tensor=True)
         
         queries_result_list = {}
         for name in self.score_functions:
@@ -162,9 +162,9 @@ class InformationRetrievalEvaluator:
 
             #Encode chunk of corpus
             if corpus_embeddings is None:
-                sub_model_corpus_embeddings = corpus_model.encode(self.corpus[corpus_start_idx:corpus_end_idx], show_progress_bar=False, batch_size=self.batch_size, convert_to_tensor=True)
+                sub_model_corpus_embeddings = corpus_model.encode(self.corpus[corpus_start_idx:corpus_end_idx], max_seq_len=max_seq_len, show_progress_bar=False, batch_size=self.batch_size, convert_to_tensor=True)
                 if tfidf_model is not None:
-                    sub_tfidf_corpus_embeddings = get_tfidf_embeddings(self.corpus[corpus_start_idx:corpus_end_idx],vectorizer=tfidf_model, max_features=300, convert_to_tensor=True)
+                    sub_tfidf_corpus_embeddings = get_tfidf_embeddings(self.corpus[corpus_start_idx:corpus_end_idx],vectorizer=tfidf_model, max_features=max_seq_len, convert_to_tensor=True)
             else:
                 sub_model_corpus_embeddings = corpus_embeddings[corpus_start_idx:corpus_end_idx]
                 if tfidf_model is not None:

@@ -95,7 +95,8 @@ if __name__=="__main__":
         output_path=args.save_to, 
         corpus_embeddings=corpus_embeddings, 
         tfidf_model=tfidf_vectorizer if args.tfidf_model is not None else None,
-        tfidf_embeddings=tfidf_embeddings
+        tfidf_embeddings=tfidf_embeddings,
+        max_seq_len=args.max_seq_len
     )
     
     # close the sever
