@@ -24,6 +24,7 @@ if __name__=="__main__":
     parser.add_argument("--tokenizer_name_or_path", default="vinai/bartpho-mlm", type=str, help="path to pretrained tokenizer")
     parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str, help="path to word segmenter")
     parser.add_argument("--batch_size", default=32, type=int, help="batch size for embedding legal docs")
+    parser.add_argument("--max_seq_len", default=300, type=int)
     parser.add_argument("--model_type", default="hg", type=str, help="set `hg` if model for evaluation is inherited from PreTrainedModel base class, `pt` if it's a pytorch custom model")
     parser.add_argument("--tfidf_model", default=None, type=str, help="path to tfidf model")
     parser.add_argument("--save_to", default=None, type=str, help="path to save evaluation results")
