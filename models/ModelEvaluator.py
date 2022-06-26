@@ -29,6 +29,7 @@ class Evaluator(nn.Module):
 
     def encode(self, sentences: Union[str, List[str]],
                batch_size: int = 32,
+               max_seq_len: int = 300,
                show_progress_bar: bool = None,
                convert_to_numpy: bool = True,
                convert_to_tensor: bool = False,
@@ -67,7 +68,7 @@ class Evaluator(nn.Module):
             features = self.tokenizer(segmented_batch,
                        padding='max_length', 
                        truncation=True, 
-                       max_length=300,
+                       max_length=max_seq_len,
                        return_tensors='pt')
 
             input_feats = {k: features[k].to(device) for k in input_keys}
