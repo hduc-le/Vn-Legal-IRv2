@@ -20,6 +20,7 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--legal_data", default="generated_data", type=str, help="path to save doc refer.")
+    parser.add_argument("--test_set", default="test_question_answer.pkl", type=str, help="name of test question answer set.")
     parser.add_argument("--model_name_or_path", default="vinai/bartpho-mlm", type=str, help="path to pretrained model")
     parser.add_argument("--tokenizer_name_or_path", default="vinai/bartpho-mlm", type=str, help="path to pretrained tokenizer")
     parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str, help="path to word segmenter")
@@ -58,8 +59,12 @@ if __name__=="__main__":
         tfidf_vectorizer = load_parameter(args.tfidf_model)
         if os.path.exists(os.path.join(args.legal_data, "tfidf_encoded_doc_refers.pkl")):
             tfidf_embeddings = load_parameter(os.path.join(args.legal_data, "tfidf_encoded_doc_refers.pkl"))
+
+
     evaluator = Evaluator(model, tokenizer, annotator)
     logging.info("Encode corpus:")
+
+
     corpus_embeddings = evaluator.encode(
         doc_refers,
         batch_size=args.batch_size,
@@ -68,9 +73,12 @@ if __name__=="__main__":
         convert_to_tensor=True,
         from_huggingface=True if args.model_type == "hg" else False
     )
+
+
     logging.info("Corpus has been encoded successfully")
     logging.info("Loading Queries:")
-    qa_test = load_parameter(os.path.join(args.legal_data, "test_question_answer.pkl"))
+    qa_test = load_parameter(os.path.join(args.legal_data, args.test_set))
+    
     dev_queries = {}
     relevant_docs = {}
     for item in tqdm(qa_test, desc="Loading"):
