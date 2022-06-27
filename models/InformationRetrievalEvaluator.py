@@ -163,22 +163,13 @@ class InformationRetrievalEvaluator:
             #Encode chunk of corpus
             if corpus_embeddings is None:
                 sub_model_corpus_embeddings = corpus_model.encode(self.corpus[corpus_start_idx:corpus_end_idx], max_seq_len=max_seq_len, show_progress_bar=False, batch_size=self.batch_size, convert_to_tensor=True)
-                if tfidf_model is not None:
-                    sub_tfidf_corpus_embeddings = get_tfidf_embeddings(self.corpus[corpus_start_idx:corpus_end_idx],vectorizer=tfidf_model, max_features=max_seq_len, convert_to_tensor=True)
+                
             else:
                 sub_model_corpus_embeddings = corpus_embeddings[corpus_start_idx:corpus_end_idx]
-                if tfidf_model is not None:
-                    sub_tfidf_corpus_embeddings = tfidf_embeddings[corpus_start_idx:corpus_end_idx]
-    
-    
+                
             #Compute cosine similarites
             for name, score_function in self.score_functions.items():
-                model_pair_scores = score_function(model_query_embeddings, sub_model_corpus_embeddings)
-                if tfidf_model is not None:
-                    tfidf_pair_scores = score_function(tfidf_query_embeddings, sub_tfidf_corpus_embeddings)
-                    pair_scores = torch.mean(torch.stack([model_pair_scores, tfidf_pair_scores], dim=1), dim=1)
-                else:
-                    pair_scores = model_pair_scores
+                pair_scores = score_function(model_query_embeddings, sub_model_corpus_embeddings)
                 #Get top-k values
                 pair_scores_top_k_values, pair_scores_top_k_idx = torch.topk(pair_scores, min(max_k, len(pair_scores[0])), dim=1, largest=True, sorted=False)
                 pair_scores_top_k_values = pair_scores_top_k_values.cpu().tolist()
