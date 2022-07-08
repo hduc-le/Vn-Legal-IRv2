@@ -18,7 +18,7 @@ if __name__=="__main__":
     parser.add_argument("--legal_data", default="./generated_data", type=str, help="path to paired data for contrastive learning")
     parser.add_argument("--model_name", default="bm25_model.pkl", type=str)
     parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str)
-    parser.add_argument("--train_ratio", default=0.65, type=float)
+    parser.add_argument("--saved_model", default="./saved_model", type=str)
     args = parser.parse_args()
 
     
