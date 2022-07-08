@@ -141,7 +141,7 @@ class InformationRetrievalEvaluator:
         else:
             return scores[self.main_score_function]['map@k'][max(self.map_at_k)]
 
-    def compute_metrices(self, model, corpus_model = None, tfidf_model = None,max_seq_len=300, corpus_embeddings: Tensor = None, tfidf_embeddings: Tensor = None) -> Dict[str, float]:
+    def compute_metrices(self, model, corpus_model = None, max_seq_len=300, corpus_embeddings: Tensor = None, tfidf_embeddings: Tensor = None) -> Dict[str, float]:
         if corpus_model is None:
             corpus_model = model
 
@@ -149,8 +149,6 @@ class InformationRetrievalEvaluator:
 
         # Compute embedding for the queries
         model_query_embeddings = model.encode(self.queries, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, max_seq_len=max_seq_len, convert_to_tensor=True)
-        if tfidf_model is not None:
-            tfidf_query_embeddings = get_tfidf_embeddings(self.queries, vectorizer=tfidf_model, max_features=max_seq_len, convert_to_tensor=True)
         
         queries_result_list = {}
         for name in self.score_functions:
