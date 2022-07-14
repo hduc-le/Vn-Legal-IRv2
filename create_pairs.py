@@ -46,7 +46,7 @@ if __name__=="__main__":
             segmented_pairs.append(
                 [sent0, sent1]
             )
-    save_parameter(segmented_pairs, os.path.join(args.generated_data, "train_pairs.pkl"))
+    save_parameter(segmented_pairs, os.path.join(args.generated_data, "train_cl_pairs.pkl"))
     logging.info("Created training pairs successfully.")
-    save_parameter(qa_test, os.path.join(args.generated_data, "test_question_answer.pkl"))
+    save_parameter(qa_test, os.path.join(args.generated_data, "test_cl_question_answer.pkl"))
     logging.info("Created test questions-answers.")
