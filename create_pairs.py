@@ -23,12 +23,12 @@ if __name__=="__main__":
     train_question_answer = load_json(os.path.join(args.raw_data, "train_question_answer.json"))
     legal_dict  = load_json(os.path.join(args.generated_data, "legal_dict.json"))
 
-    qa_train, qa_test = train_test_split(train_question_answer["items"], test_size=1-args.train_ratio, random_state=42)
+    QA_train, QA_test = train_test_split(train_question_answer["items"], test_size=1-args.train_ratio, random_state=42)
 
     logging.info("Pairing the contrastive setences.")
     qa_pairs = [
         [clean_text(item["question"]), legal_dict[label["law_id"]+"@"+label["article_id"]]]\
-            for item in qa_train for label in item["relevant_articles"]
+            for item in QA_train for label in item["relevant_articles"]
     ]
     
     segmented_pairs = []
@@ -48,5 +48,5 @@ if __name__=="__main__":
             )
     save_parameter(segmented_pairs, os.path.join(args.generated_data, "train_cl_pairs.pkl"))
     logging.info("Created training pairs successfully.")
-    save_parameter(qa_test, os.path.join(args.generated_data, "test_cl_question_answer.pkl"))
+    save_parameter(QA_test, os.path.join(args.generated_data, "test_cl_question_answer.pkl"))
     logging.info("Created test questions-answers.")

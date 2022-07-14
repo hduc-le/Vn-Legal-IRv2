@@ -57,7 +57,7 @@ if __name__=="__main__":
     tokenized_docs = [sent.split() for sent, _ in Q_memories]
     bm25 = BM25Okapi(tokenized_docs)
     
-    
+    os.makedirs(args.saved_model, exist_ok=True)
     save_parameter(bm25, os.path.join(args.saved_model, "bm25_model.pkl"))
     save_parameter(Q_new, os.path.join(args.generated_data, "Q_new.pkl"))
     save_parameter(Q_memories, os.path.join(args.generated_data, "Q_memories.pkl"))

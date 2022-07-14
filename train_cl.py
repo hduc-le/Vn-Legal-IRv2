@@ -89,7 +89,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--generated_data", default="./generated_data", type=str, help="path to sentence-pairs for contrastive training")
     parser.add_argument("--model_name_or_path", default="vinai/bartpho-word", type=str)
-    parser.add_argument("--saved_model", default="saved_model/model-cl", type=str)
+    parser.add_argument("--saved_model", default="./saved_model", type=str)
     parser.add_argument("--max_seq_len", default=300, type=int)
     parser.add_argument("--temperature", default=0.1, type=float, help="hyper-parameter for contrastive loss")
     parser.add_argument("--learning_rate", default=5e-5, type=float)
@@ -103,7 +103,7 @@ if __name__=="__main__":
     device = get_device()
 
     logging.info("Preparing paired data for contrastive learning.")
-    segmented_pairs = load_parameter(os.path.join(args.generated_data, "train_pairs.pkl"))
+    segmented_pairs = load_parameter(os.path.join(args.generated_data, "train_cl_pairs.pkl"))
     num_sent = len(segmented_pairs[0])
 
     logging.info("Download pretrained tokenizer")
@@ -162,5 +162,7 @@ if __name__=="__main__":
         logging.info("Epoch loss: {:.5f}".format(loss))
         if args.lr_decay:
             lr_scheduler.step()
-    model.save_pretrained(args.saved_model)
-    tokenizer.save_pretrained(args.saved_model)
+
+    os.makedirs("./saved_model", exist_ok=True)       
+    model.save_pretrained(os.path.join(args.saved_model, "model-cl"))
+    tokenizer.save_pretrained(os.path.join(args.saved_model, "model-cl"))

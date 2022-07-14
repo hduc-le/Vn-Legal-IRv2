@@ -20,13 +20,11 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--generated_data", default="generated_data", type=str, help="path to save doc refer.")
-    parser.add_argument("--test_set", default="test_question_answer.pkl", type=str, help="name of test question answer set.")
     parser.add_argument("--model_name_or_path", default="vinai/bartpho-word", type=str, help="path to pretrained model")
     parser.add_argument("--tokenizer_name_or_path", default="vinai/bartpho-word", type=str, help="path to pretrained tokenizer")
     parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str, help="path to word segmenter")
     parser.add_argument("--batch_size", default=32, type=int, help="batch size for embedding legal docs")
     parser.add_argument("--max_seq_len", default=300, type=int)
-    parser.add_argument("--model_type", default="hg", type=str, help="set `hg` if model for evaluation is inherited from PreTrainedModel base class, `pt` if it's a pytorch custom model")
     parser.add_argument("--save_to", default=None, type=str, help="path to save evaluation results")
     parser.add_argument("--name", default="evaluation_results.csv", type=str, help="csv name file for evaluation results")
     args = parser.parse_args()
@@ -43,15 +41,13 @@ if __name__=="__main__":
         annotators="wseg,pos,ner,parse", 
         max_heap_size="-Xmx2g"
     )
-    if args.model_type == "hg":
-        logging.info("Load model...")
-        model = AutoModel.from_pretrained(args.model_name_or_path)
-        
-        logging.info("Load pretrained tokenizer...")
-        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name_or_path)
-    else:
-        raise NotImplementedError("Still not Implement !!!")
 
+    logging.info("Load model...")
+    model = AutoModel.from_pretrained(args.model_name_or_path)
+    
+    logging.info("Load pretrained tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name_or_path)
+    
 
     evaluator = Evaluator(model, tokenizer, annotator)
     logging.info("Encode corpus:")
@@ -69,7 +65,7 @@ if __name__=="__main__":
 
     logging.info("Corpus has been encoded successfully")
     logging.info("Loading Queries:")
-    qa_test = load_parameter(os.path.join(args.generated_data, args.test_set))
+    qa_test = load_parameter(os.path.join(args.generated_data, "test_cl_question_answer.pkl"))
     
     dev_queries = {}
     relevant_docs = {}
