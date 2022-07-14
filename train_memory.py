@@ -124,6 +124,7 @@ if __name__=="__main__":
 
     optim = torch.optim.AdamW(model.parameters(), lr=args.learning_rate)
     
+    input_keys = ["input_ids", "attention_mask"]
     for epoch in range(1):
         overall_loss = 0.0
         iterator = tqdm(train_loader, leave=True)
@@ -134,10 +135,17 @@ if __name__=="__main__":
             optim.zero_grad()
 
             query_features = batch["feats0"]
-            query_label_features = batch["feats1"]
-            bm25_retr_features = batch["feats2"]
-            bm25_gt_features = batch["feats3"]
+            query_features = {key: query_features[key].view(-1, query_features[key].shape[-1]).to(device) for key in input_keys}
 
+            query_label_features = batch["feats1"]
+            query_label_features = {key: query_label_features[key].view(-1, query_label_features[key].shape[-1]).to(device) for key in input_keys}
+
+            bm25_retr_features = batch["feats2"]
+            bm25_retr_features = {key: bm25_retr_features[key].view(-1, bm25_retr_features[key].shape[-1]).to(device) for key in input_keys}
+
+            bm25_gt_features = batch["feats3"]
+            bm25_retr_features = {key: bm25_gt_features[key].view(-1, bm25_gt_features[key].shape[-1]).to(device) for key in input_keys}
+            
             query_transformed, query_label_emb = model(query_features, query_label_features, bm25_retr_features, bm25_gt_features)
             
             # compute loss
