@@ -1,9 +1,8 @@
 import os
-from turtle import forward
 import torch
 import argparse
 import warnings
-
+import torch.nn.functional as F
 from torch import nn 
 from models.MemoryModel import MemoryModel
 
@@ -12,130 +11,137 @@ from transformers import (
     AutoModel,
     AutoTokenizer
 )
+from vncorenlp import VnCoreNLP
 from utils import *
-from losses.ContrastiveLoss import SupervisedContrastiveLoss
 warnings.filterwarnings('ignore')
 
-class DataForCL(torch.utils.data.Dataset):
-    def __init__(self, encodings0, encodings1):
-        self.encodings0 = encodings0
-        self.encodings1 = encodings1
+
+cos = nn.CosineSimilarity(dim=1, eps=1e-6)
+class Dataset(torch.utils.data.Dataset):
+    def __init__(self, train_pairs, tokenizer):
+        self.train_pairs = train_pairs
+        self.tokenizer = tokenizer
+        
     def __getitem__(self, idx):
-        features0 = {
-            key: torch.tensor(val[idx]) for key, val in self.encodings0.items()
-        }
-        features1 = {
-            key: torch.tensor(val[idx]) for key, val in self.encodings1.items()
-        }
-        return features0, features1
+        sent = self.train_pairs[idx][0]
+        sent_label = self.train_pairs[idx][1]
+        retrieved_top = self.train_pairs[idx][2]
+        groundtruths = self.train_pairs[idx][3]
+
+        sent_feats = self.tokenizer(
+            sent,
+            truncation=True,
+            padding="max_length",
+            max_length=args.max_seq_len,
+            return_tensors="pt"
+        )
+        sent_labels_feats = self.tokenizer(
+            sent_label,
+            truncation=True,
+            padding="max_length",
+            max_length=args.max_seq_len,
+            return_tensors="pt"
+        )
+        retr_feats = self.tokenizer(
+            retrieved_top,
+            truncation=True,
+            padding="max_length",
+            max_length=args.max_seq_len,
+            return_tensors="pt"
+        )
+        gt_feats = self.tokenizer(
+            groundtruths,
+            truncation=True,
+            padding="max_length",
+            max_length=args.max_seq_len,
+            return_tensors="pt"
+        )
+        return {"feats0": sent_feats, "feats1": sent_labels_feats,"feats2": retr_feats, "feats3": gt_feats}
     def __len__(self):
-        return len(self.encodings0['input_ids'])
+        return len(self.train_pairs)
 
-class Model(nn.Module):
-    def __init__(self, model_name_or_path) -> None:
-        super(Model, self).__init__()
-        self.bart_model = AutoModel.from_pretrained(model_name_or_path)
-        for param in self.bart_model.parameters():
-            param.requires_grad = False 
-
-        self.memory_model = MemoryModel(self.bart_model.config.hidden_size, self.bart_model.config.hidden_size)
-
-    def forward(self, query_inputs, pos_inputs):
-        with torch.no_grad():
-            query_out = self.bart_model(
-                input_ids=query_inputs["input_ids"],
-                attention_mask=query_inputs["attention_mask"]
-            )
-            pos_out = self.bart_model(
-                input_ids=pos_inputs["input_ids"],
-                attention_mask=pos_inputs["attention_mask"]
-            )
-
-            query_emb = mean_pooling(query_out, query_inputs["attention_mask"])
-            pos_emb = mean_pooling(pos_out, pos_inputs["attention_mask"])
-
-        output_dict = self.memory_model(query_emb)
-        query_transformed = output_dict["query_transformed"]
-        return query_transformed, pos_emb
+def make_pair_question_answer(QA_set, annotator):
+    pairs = []
+    for item in tqdm(QA_set):
+        try:
+            seg_question = " ".join(flatten2DList(annotator.tokenize(clean_text(item["question"]))))
+            for label in item["relevant_articles"]:
+                pos_sent = legal_dict[label["law_id"]+"@"+label["article_id"]]
+                seg_pos_sent = " ".join(flatten2DList(annotator.tokenize(pos_sent)))
+                pairs.append(
+                    [seg_question, seg_pos_sent]
+                )
+        except:
+            pass
+    return pairs
 
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--paired_data", default="./generated_data/train_pairs.pkl", type=str, help="path to sentence-pairs for contrastive training")
+    parser.add_argument("--raw_data", default="./raw_data/", type=str, help="path to question answer set")
+    parser.add_argument("--generated_data", default="vinai/bartpho-word", type=str)
     parser.add_argument("--model_name_or_path", default="vinai/bartpho-word", type=str)
-    parser.add_argument("--mem_size", default=10, type=int)
-    parser.add_argument("--saved_model", default="saved_model/model-memory", type=str)
+    parser.add_argument("--saved_model", default="saved_model/model-memory.pth", type=str)
     parser.add_argument("--max_seq_len", default=300, type=int)
-    parser.add_argument("--temperature", default=0.1, type=float, help="hyper-parameter for contrastive loss")
-    parser.add_argument("--learning_rate", default=5e-5, type=float)
-    parser.add_argument("--lr_decay", default=False, type=bool)
-    parser.add_argument("--decay_rate", default=0.96, type=float)
-    parser.add_argument("--batch_size", default=32, type=int)
-    parser.add_argument("--num_epochs", default=10, type=int)
-    parser.add_argument("--save_model",  default='finish', const='finish', nargs='?', choices=['epoch', 'finish'], help="save model every epoch (`epoch`) or end of training (`finish`), (default: %(default)s)")
+    parser.add_argument("--learning_rate", default=0.1, type=float)
     args = parser.parse_args()
     
     device = get_device()
 
-    print(">> Preparing paired data for contrastive learning.")
-    segmented_pairs = load_parameter(args.paired_data)
+    annotator = VnCoreNLP(
+        "./VnCoreNLP/VnCoreNLP-1.1.1.jar", 
+        annotators="wseg,pos,ner,parse", 
+        max_heap_size="-Xmx2g"
+    )
 
-    examples0 = [sent for sent, _ in segmented_pairs]
-    examples1 = [sent for _, sent in segmented_pairs]
+    legal_dict = load_json(os.path.join(args.generated_data, "legal_dict.json"))
+    Q_memories = load_parameter(os.path.join(args.generated_data, "Q_memories.pkl"))
+    Q_new = load_parameter(os.path.join(args.generated_dat, "Q_new.pkl"))
+    
+    bm25_query_refers = np.array([sent for sent, _ in Q_memories])
+    bm25_positive_refers = np.array([pos_sent for _, pos_sent in Q_memories])
 
-    print(">> Download pretrained tokenizer")
+    bm25 = load_parameter(os.path.join(args.saved_model, "bm25_model.pkl"))
+
+    train_pairs = []
+    for q_new, q_new_label in tqdm(Q_new):
+        scores = bm25.get_scores(q_new.split())
+        top10_ids = np.argsort(scores)[::-1][:10]
+        retrieved_queries = bm25_query_refers[top10_ids].tolist()
+        positive_list = bm25_positive_refers[top10_ids].tolist()
+        train_pairs.append(
+            [q_new, q_new_label, retrieved_queries, positive_list]
+        )
+
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
-
-    encodings0 = tokenizer(
-        examples0,
-        truncation=True,
-        padding="max_length",
-        max_length=args.max_seq_len,
-        return_tensors="pt"
-    )
-    encodings1 = tokenizer(
-        examples1,
-        truncation=True,
-        padding="max_length",
-        max_length=args.max_seq_len,
-        return_tensors="pt"
-    )
-
-    train_dataset = DataForCL(encodings0, encodings1)
+    train_dataset = Dataset(train_pairs, tokenizer)
     train_loader = torch.utils.data.DataLoader(train_dataset,
-                                        batch_size=args.batch_size,
+                                        batch_size=1,
                                         shuffle=True)
 
-    
-
-    model = MemoryModel(model_name_or_path=args.model_name_or_path, memory_size=args.mem_size)
+    model = MemoryModel()
     model.to(device)
 
     optim = torch.optim.AdamW(model.parameters(), lr=args.learning_rate)
-    loss_fn = SupervisedContrastiveLoss(args.temperature)
-    if args.lr_decay:
-        lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=args.decay_rate)
-
-    input_keys = ["input_ids", "attention_mask"]
     
-    print("============= Start training =============")
-    for epoch in range(args.num_epochs):
+    for epoch in range(1):
         overall_loss = 0.0
         iterator = tqdm(train_loader, leave=True)
         model.train()
-        for query_features, sentence_features in iterator:
+        
+        for batch in iterator:
             # clear gradient
             optim.zero_grad()
-            query_inputs = {key: query_features[key].to(device) for key in input_keys}
-            pos_inputs = {key: sentence_features[key].to(device) for key in input_keys}
-            output_dict = model(query_inputs, pos_inputs)
+
+            query_features = batch["feats0"]
+            query_label_features = batch["feats1"]
+            bm25_retr_features = batch["feats2"]
+            bm25_gt_features = batch["feats3"]
+
+            query_transformed, query_label_emb = model(query_features, query_label_features, bm25_retr_features, bm25_gt_features)
             
             # compute loss
-            if args.regularization:
-                loss = loss_fn(output_dict["query_transformed"], output_dict["positive_emb"]) + 0.01*torch.norm(output_dict["query_attn_weights"])
-            else:
-                loss = loss_fn(output_dict["query_transformed"], output_dict["positive_emb"])
-            
+            loss = 1-cos(query_transformed, query_label_emb)
             overall_loss += loss.item()
 
             # backpropagation
@@ -144,21 +150,8 @@ if __name__=="__main__":
 
             iterator.set_description('Epoch {}'.format(epoch))
             iterator.set_postfix(loss=loss.item())
-
-        print(f'Finished epoch {epoch}.')
-        print(">> Epoch loss: {:.5f}".format(overall_loss/len(train_loader)))
-
-        if args.lr_decay:
-            lr_scheduler.step()
-        if args.save_model == 'epoch':
-            torch.save({
-                "epoch": epoch,
-                "model_state_dict": model.state_dict(),
-                "optimizer_state_dict": optim.state_dict()
-            }, os.path.join(args.saved_model, "epoch={} model-memory.pth".format(epoch)))
-        
-    if args.save_model == 'finish':
-        torch.save({
-                "model_state_dict": model.state_dict(),
-                "optimizer_state_dict": optim.state_dict()
-            }, os.path.join(args.saved_model, "model-memory.pth"))
+            
+        logging.info(f'Finished epoch {epoch}.')
+        logging.info("Epoch loss: {:.5f}".format(overall_loss/len(train_loader)))
+    
+    
