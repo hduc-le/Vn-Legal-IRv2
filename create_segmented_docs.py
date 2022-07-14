@@ -14,11 +14,11 @@ logging.basicConfig(
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--raw_data", default="./data", type=str, help="for loading question")
-    parser.add_argument("--legal_data", default="./generated_data", type=str, help="path to doc for reference")
+    parser.add_argument("--generated_data", default="./generated_data", type=str, help="path to doc for reference")
     parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str, help="path to word segmenter")
     args = parser.parse_args()
 
-    doc_refers = load_parameter(os.path.join(args.legal_data, "doc_refers_saved.pkl"))
+    doc_refers = load_parameter(os.path.join(args.generated_data, "doc_refers_saved.pkl"))
     segmented_docs = []
 
     logging.info("Load Word-Segmenter...")
@@ -34,6 +34,6 @@ if __name__=="__main__":
                 seg_doc = doc
             segmented_docs.append(seg_doc)
 
-    save_parameter(segmented_docs, os.path.join(args.legal_data, "segmented_docs.pkl"))
+    save_parameter(segmented_docs, os.path.join(args.generated_data, "segmented_docs.pkl"))
     logging.info("Created segmented docs for reference successfully.")
     

@@ -15,13 +15,13 @@ logging.basicConfig(
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--raw_data", default="./data", type=str, help="for loading question")
-    parser.add_argument("--legal_data", default="./generated_data", type=str, help="path to paired data for contrastive learning")
+    parser.add_argument("--generated_data", default="./generated_data", type=str, help="path to paired data for contrastive learning")
     parser.add_argument("--word_segmenter", default="./VnCoreNLP/VnCoreNLP-1.1.1.jar", type=str)
     parser.add_argument("--train_ratio", default=0.65, type=float)
     args = parser.parse_args()
 
     train_question_answer = load_json(os.path.join(args.raw_data, "train_question_answer.json"))
-    legal_dict  = load_json(os.path.join(args.legal_data, "legal_dict.json"))
+    legal_dict  = load_json(os.path.join(args.generated_data, "legal_dict.json"))
 
     qa_train, qa_test = train_test_split(train_question_answer["items"], test_size=1-args.train_ratio, random_state=42)
 
@@ -46,7 +46,7 @@ if __name__=="__main__":
             segmented_pairs.append(
                 [sent0, sent1]
             )
-    save_parameter(segmented_pairs, os.path.join(args.legal_data, "train_pairs.pkl"))
+    save_parameter(segmented_pairs, os.path.join(args.generated_data, "train_pairs.pkl"))
     logging.info("Created training pairs successfully.")
-    save_parameter(qa_test, os.path.join(args.legal_data, "test_question_answer.pkl"))
+    save_parameter(qa_test, os.path.join(args.generated_data, "test_question_answer.pkl"))
     logging.info("Created test questions-answers.")

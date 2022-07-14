@@ -19,7 +19,7 @@ from utils import *
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--legal_data", default="generated_data", type=str, help="path to save doc refer.")
+    parser.add_argument("--generated_data", default="generated_data", type=str, help="path to save doc refer.")
     parser.add_argument("--test_set", default="test_question_answer.pkl", type=str, help="name of test question answer set.")
     parser.add_argument("--model_name_or_path", default="vinai/bartpho-word", type=str, help="path to pretrained model")
     parser.add_argument("--tokenizer_name_or_path", default="vinai/bartpho-word", type=str, help="path to pretrained tokenizer")
@@ -34,8 +34,8 @@ if __name__=="__main__":
     device = get_device()
     
     logging.info("Prepare data for evaluation")
-    doc_refers = load_parameter(os.path.join(args.legal_data, "doc_refers_saved.pkl"))
-    legal_dict = load_json(os.path.join(args.legal_data, "legal_dict.json"))
+    doc_refers = load_parameter(os.path.join(args.generated_data, "doc_refers_saved.pkl"))
+    legal_dict = load_json(os.path.join(args.generated_data, "legal_dict.json"))
 
     logging.info("Load Word-Segmenter...")
     annotator = VnCoreNLP(
@@ -69,7 +69,7 @@ if __name__=="__main__":
 
     logging.info("Corpus has been encoded successfully")
     logging.info("Loading Queries:")
-    qa_test = load_parameter(os.path.join(args.legal_data, args.test_set))
+    qa_test = load_parameter(os.path.join(args.generated_data, args.test_set))
     
     dev_queries = {}
     relevant_docs = {}

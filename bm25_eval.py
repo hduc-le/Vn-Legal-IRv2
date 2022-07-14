@@ -51,7 +51,7 @@ if __name__ == '__main__':
     parser.add_argument("--stopword", default="manual", type=str)
     parser.add_argument("--model_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--raw_data", default="data", type=str, help="path to input data")
-    parser.add_argument("--legal_path", default="generated_data/", type=str, help="path to save pair sentence directory")
+    parser.add_argument("--generated_data", default="generated_data/", type=str, help="path to save pair sentence directory")
     args = parser.parse_args()
 
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     # with open(args.model_path, "rb") as bm_file:
     bm25 = load_parameter(args.model_path)
 
-    doc_refers = load_parameter(os.path.join(args.legal_path, "doc_refers_saved.pkl"))
+    doc_refers = load_parameter(os.path.join(args.generated_data, "doc_refers_saved.pkl"))
 
     doc_data = load_json(os.path.join("legal_dict.json"))
     corpus_ids = [id for id in doc_data]
