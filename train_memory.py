@@ -81,19 +81,21 @@ if __name__=="__main__":
     parser.add_argument("--raw_data", default="./raw_data/", type=str, help="path to question answer set")
     parser.add_argument("--generated_data", default="vinai/bartpho-word", type=str)
     parser.add_argument("--model_name_or_path", default="vinai/bartpho-word", type=str)
-    parser.add_argument("--saved_model", default="saved_model/model-memory.pth", type=str)
+    parser.add_argument("--saved_model", default="./saved_model", type=str)
     parser.add_argument("--max_seq_len", default=300, type=int)
     parser.add_argument("--learning_rate", default=0.1, type=float)
     args = parser.parse_args()
     
     device = get_device()
 
+    # word segmenter
     annotator = VnCoreNLP(
         "./VnCoreNLP/VnCoreNLP-1.1.1.jar", 
         annotators="wseg,pos,ner,parse", 
         max_heap_size="-Xmx2g"
     )
 
+    # load data
     legal_dict = load_json(os.path.join(args.generated_data, "legal_dict.json"))
     Q_memories = load_parameter(os.path.join(args.generated_data, "Q_memories.pkl"))
     Q_new = load_parameter(os.path.join(args.generated_dat, "Q_new.pkl"))
@@ -101,8 +103,10 @@ if __name__=="__main__":
     bm25_query_refers = np.array([sent for sent, _ in Q_memories])
     bm25_positive_refers = np.array([pos_sent for _, pos_sent in Q_memories])
 
+    # pretrained bm25 model
     bm25 = load_parameter(os.path.join(args.saved_model, "bm25_model.pkl"))
 
+    # build training data
     train_pairs = []
     for q_new, q_new_label in tqdm(Q_new):
         scores = bm25.get_scores(q_new.split())
@@ -113,10 +117,11 @@ if __name__=="__main__":
             [q_new, q_new_label, retrieved_queries, positive_list]
         )
 
+    # tokenizer and dataloader
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
     train_dataset = Dataset(train_pairs, tokenizer)
     train_loader = torch.utils.data.DataLoader(train_dataset,
-                                        batch_size=1,
+                                        batch_size=1, #NOTE: train only with a single example
                                         shuffle=True)
 
     model = MemoryModel()
@@ -162,4 +167,8 @@ if __name__=="__main__":
         logging.info(f'Finished epoch {epoch}.')
         logging.info("Epoch loss: {:.5f}".format(overall_loss/len(train_loader)))
     
-    
+    os.makedirs(args.saved_model, exist_ok=True)
+    torch.save(model.state_dict(), os.path.join(args.saved_model, "model-memory.pth"))
+
+    # close the server
+    annotator.close()
