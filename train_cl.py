@@ -166,3 +166,5 @@ if __name__=="__main__":
     os.makedirs("./saved_model", exist_ok=True)       
     model.save_pretrained(os.path.join(args.saved_model, "model-cl"))
     tokenizer.save_pretrained(os.path.join(args.saved_model, "model-cl"))
+
+    logging.info("Done.")
