@@ -3,7 +3,7 @@ import torch
 from torch import nn, Tensor
 from tqdm import trange
 from typing import Set, Union, List, Dict, Callable
-from utils import flatten2DList, get_device
+from utils import flatten2DList, get_device, mean_pooling
 
 class Evaluator(nn.Module):
     def __init__(self, model, tokenizer, word_segmenter) -> None:
@@ -20,7 +20,7 @@ class Evaluator(nn.Module):
             output_hidden_states=True
         )
             # Perform pooling with model outputs
-            pooler_output = self.mean_pooling(outputs, attention_mask=inputs["attention_mask"])
+            pooler_output = mean_pooling(outputs, attention_mask=inputs["attention_mask"])
             return pooler_output
         outputs = self.model(inputs)
         return outputs
@@ -87,12 +87,6 @@ class Evaluator(nn.Module):
         if input_was_string:
             all_embeddings = all_embeddings[0]
         return all_embeddings
-    
-    @staticmethod
-    def mean_pooling(model_output, attention_mask):
-        token_embeddings = model_output[0] #First element of model_output contains all token embeddings
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
 if __name__=="__main__":
     pass
