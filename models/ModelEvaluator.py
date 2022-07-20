@@ -28,8 +28,7 @@ class Evaluator(nn.Module):
                show_progress_bar: bool = None,
                convert_to_numpy: bool = True,
                convert_to_tensor: bool = False,
-               device=None,
-               from_huggingface: bool=True) -> Union[List[Tensor], np.ndarray, Tensor]:
+               device=None) -> Union[List[Tensor], np.ndarray, Tensor]:
         '''
         Get multiple embedding of sentences
         '''
@@ -68,7 +67,7 @@ class Evaluator(nn.Module):
 
             input_feats = {k: features[k].to(device) for k in input_keys}
             with torch.no_grad():
-                out_features = self.forward(input_feats, from_huggingface)
+                out_features = self.forward(input_feats)
                 embeddings = []
                 for row in out_features:
                     embeddings.append(row.cpu())
