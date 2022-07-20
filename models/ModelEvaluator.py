@@ -12,20 +12,15 @@ class Evaluator(nn.Module):
         self.tokenizer = tokenizer
         self.word_segmenter = word_segmenter
         
-    def forward(self, inputs, from_huggingface=True):
-        if from_huggingface:
-            outputs = self.model(
+    def forward(self, inputs):
+        outputs = self.model(
             input_ids=inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
             output_hidden_states=True
         )
-            # Perform pooling with model outputs
-            pooler_output = mean_pooling(outputs, attention_mask=inputs["attention_mask"])
-            return pooler_output
-        outputs = self.model(inputs)
-        return outputs
-        
-        
+        # Perform pooling with model outputs
+        pooler_output = mean_pooling(outputs, attention_mask=inputs["attention_mask"])
+        return pooler_output
 
     def encode(self, sentences: Union[str, List[str]],
                batch_size: int = 32,

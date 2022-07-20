@@ -58,8 +58,7 @@ if __name__=="__main__":
         batch_size=args.batch_size,
         max_seq_len=args.max_seq_len,
         show_progress_bar=True,
-        convert_to_tensor=True,
-        from_huggingface=True if args.model_type == "hg" else False
+        convert_to_tensor=True
     )
 
 
